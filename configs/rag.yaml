@@ -1,0 +1,31 @@
+project:
+  name: comp9444-rag
+
+paths:
+  raw_data_dir: data/raw/comp9444
+  vectorstore_dir: data/vectorstore/chroma
+  index_state_path: data/vectorstore/index_state.json
+  manifest_path: manifest.yaml
+  retrieval_rules_path: retrieval_rules.yaml
+
+chunking:
+  chunk_size: 1200
+  chunk_overlap: 180
+
+retrieval:
+  collection_name: comp9444_chunks
+  top_k: 5
+
+chat:
+  provider: deepseek_api
+  model_env: DEEPSEEK_CHAT_MODEL
+  base_url_env: DEEPSEEK_BASE_URL
+  api_key_env: DEEPSEEK_API_KEY
+  max_tokens: 800
+  temperature: 0.2
+
+embedding:
+  provider: ollama
+  model_env: OLLAMA_EMBEDDING_MODEL
+  base_url_env: OLLAMA_BASE_URL
+

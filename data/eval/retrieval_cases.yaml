@@ -1,0 +1,31 @@
+cases:
+  - id: cross_entropy_zh
+    question: "请问什么是交叉熵，用英文回答"
+    expected_sources:
+      - "3a_Variations.pdf"
+    expected_pages: [3, 7, 8, 9, 10]
+
+  - id: pytorch_implementation_en
+    question: "How do you implement a neural network in PyTorch?"
+    expected_sources:
+      - "2c_PyTorch.pdf"
+    expected_pages: [2, 12, 13, 15]
+
+  - id: perceptron_en
+    question: "What are the limitations of perceptrons?"
+    expected_sources:
+      - "1c_Perceptrons.pdf"
+    expected_pages: [18]
+
+  - id: entropy_kl_en
+    question: "What is the relationship between entropy and KL divergence?"
+    expected_sources:
+      - "2a_Probability.pdf"
+    expected_pages: [16, 19, 20, 21]
+
+  - id: generalization_en
+    question: "What is generalization in neural networks?"
+    expected_sources:
+      - "2b_Generalization.pdf"
+    expected_pages: [1, 2]
+

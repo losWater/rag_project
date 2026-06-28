@@ -1,0 +1,24 @@
+.venv/
+.env
+.cache/
+logs/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
+
+# Course data and generated indexes
+data/raw/*
+!data/raw/.gitkeep
+!data/raw/comp9444/
+data/raw/comp9444/*
+!data/raw/comp9444/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/eval/*
+!data/eval/.gitkeep
+!data/eval/*.yaml
+!data/eval/*.yml
+data/vectorstore/
+chroma/
+*.sqlite3

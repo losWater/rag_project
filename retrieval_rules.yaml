@@ -1,0 +1,24 @@
+rules:
+  - id: code_implementation
+    name: Code implementation questions
+    description: Questions asking how to implement a concept, model, training loop, function, class, or debugging step in code.
+    triggers:
+      - code
+      - implementation
+      - python
+      - pytorch
+      - function
+      - class
+      - debug
+      - 代码
+      - 实现
+      - 怎么写
+      - 如何写
+    regex:
+      - "(代码|实现|怎么写|如何写|debug|函数|class|python|pytorch)"
+    prefer_tags:
+      - code_example
+      - tutorial_code
+    instruction: >
+      If this rule matches, prefer code-oriented course material. Explain the implementation in steps and cite the course chunks used.
+

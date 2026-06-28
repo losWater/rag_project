@@ -1,0 +1,54 @@
+documents:
+  - path: data/raw/comp9444/1a_Overview.pdf
+    title: Week 1a Overview
+    document_type: lecture
+    tags: [overview, conceptual_lecture]
+    index: true
+
+  - path: data/raw/comp9444/1b_Neuroanatomy.pdf
+    title: Week 1b Neuroanatomy
+    document_type: lecture
+    tags: [neuroanatomy, conceptual_lecture]
+    index: true
+
+  - path: data/raw/comp9444/1c_Perceptrons.pdf
+    title: Week 1c Perceptrons
+    document_type: lecture
+    tags: [perceptron, conceptual_lecture]
+    index: true
+
+  - path: data/raw/comp9444/2a_Probability.pdf
+    title: Week 2a Probability
+    document_type: lecture
+    tags: [probability, conceptual_lecture]
+    index: true
+
+  - path: data/raw/comp9444/2b_Generalization.pdf
+    title: Week 2b Generalization
+    document_type: lecture
+    tags: [generalization, conceptual_lecture]
+    index: true
+
+  - path: data/raw/comp9444/2c_PyTorch.pdf
+    title: Week 2c PyTorch
+    document_type: lecture
+    tags: [pytorch, code_example, tutorial_code]
+    index: true
+
+  - path: data/raw/comp9444/3a_Variations.pdf
+    title: Week 3a Variations
+    document_type: lecture
+    tags: [model_variations, conceptual_lecture]
+    index: true
+
+  - path: data/raw/comp9444/3b_Dynamics.pdf
+    title: Week 3b Hidden Unit Dynamics
+    document_type: lecture
+    tags: [hidden_unit_dynamics, conceptual_lecture]
+    index: true
+
+  - path: data/raw/comp9444/4a_Convolution.pdf
+    title: Week 4a Convolutional Networks
+    document_type: lecture
+    tags: [convolutional_networks, cnn, conceptual_lecture]
+    index: true
