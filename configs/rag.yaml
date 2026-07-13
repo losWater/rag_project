@@ -15,6 +15,10 @@ chunking:
 retrieval:
   collection_name: comp9444_chunks
   top_k: 5
+  mode: hybrid
+  vector_candidates: 12
+  keyword_candidates: 12
+  rrf_k: 60
 
 chat:
   provider: deepseek_api
@@ -28,4 +32,3 @@ embedding:
   provider: ollama
   model_env: OLLAMA_EMBEDDING_MODEL
   base_url_env: OLLAMA_BASE_URL
-

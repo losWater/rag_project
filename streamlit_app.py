@@ -21,14 +21,15 @@ def cached_config():
 
 
 def citation_rows(contexts):
-    """把检索结果转换成表格行，供页面展示引用和距离分数。"""
+    """把检索结果转换成表格行，供页面展示检索来源和分数。"""
     return [
         {
             "#": index,
             "source": item.metadata.get("source_name", "unknown"),
             "page": item.metadata.get("page", "?"),
             "chunk": item.metadata.get("chunk_index", "?"),
-            "distance": round(item.distance, 4),
+            "retrieved_by": "+".join(item.retrieval_sources),
+            "score": round(item.fusion_score, 4) if item.fusion_score is not None else item.distance,
             "matched_queries": ", ".join(item.matched_queries),
         }
         for index, item in enumerate(contexts, start=1)
@@ -92,7 +93,11 @@ if ask:
     with st.expander("Retrieved Contexts", expanded=False):
         for index, item in enumerate(response.contexts, start=1):
             st.markdown(f"**[{index}] {item.citation}**")
-            st.caption(f"Distance: {item.distance:.4f}")
+            st.caption("Retrieved by: " + "+".join(item.retrieval_sources))
+            if item.fusion_score is not None:
+                st.caption(f"Fusion score: {item.fusion_score:.4f}")
+            elif item.distance is not None:
+                st.caption(f"Distance: {item.distance:.4f}")
             if item.matched_queries:
                 st.caption("Matched queries: " + ", ".join(item.matched_queries))
             st.text(item.text[:1500])

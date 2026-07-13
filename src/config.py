@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +29,10 @@ class AppConfig:
     chunk_overlap: int
     collection_name: str
     top_k: int
+    retrieval_mode: str
+    vector_candidates: int
+    keyword_candidates: int
+    rrf_k: int
     chat: dict[str, Any]
     embedding: dict[str, Any]
 
@@ -63,6 +67,10 @@ def load_config(config_path: str | Path = "configs/rag.yaml") -> AppConfig:
     chunking = data.get("chunking", {})
     retrieval = data.get("retrieval", {})
 
+    retrieval_mode = str(retrieval.get("mode", "vector")).lower()
+    if retrieval_mode not in {"vector", "bm25", "hybrid"}:
+        raise ValueError("retrieval.mode must be one of: vector, bm25, hybrid")
+
     return AppConfig(
         raw_data_dir=resolve_path(paths.get("raw_data_dir", "data/raw/comp9444")),
         vectorstore_dir=resolve_path(paths.get("vectorstore_dir", "data/vectorstore/chroma")),
@@ -73,6 +81,10 @@ def load_config(config_path: str | Path = "configs/rag.yaml") -> AppConfig:
         chunk_overlap=int(chunking.get("chunk_overlap", 180)),
         collection_name=str(retrieval.get("collection_name", "comp9444_chunks")),
         top_k=int(retrieval.get("top_k", 5)),
+        retrieval_mode=retrieval_mode,
+        vector_candidates=int(retrieval.get("vector_candidates", 12)),
+        keyword_candidates=int(retrieval.get("keyword_candidates", 12)),
+        rrf_k=int(retrieval.get("rrf_k", 60)),
         chat=dict(data.get("chat", {})),
         embedding=dict(data.get("embedding", {})),
     )
@@ -88,3 +100,13 @@ def load_manifest(path: str | Path) -> list[dict[str, Any]]:
     if not isinstance(documents, list):
         raise ValueError("manifest.yaml must contain a documents list")
     return [doc for doc in documents if isinstance(doc, dict) and doc.get("index", True)]
+
+
+def with_retrieval_mode(config: AppConfig, mode: str | None) -> AppConfig:
+    """Return a config with a validated retrieval mode override for CLI experiments."""
+    if mode is None:
+        return config
+    normalized = mode.lower()
+    if normalized not in {"vector", "bm25", "hybrid"}:
+        raise ValueError("retrieval mode must be one of: vector, bm25, hybrid")
+    return replace(config, retrieval_mode=normalized)

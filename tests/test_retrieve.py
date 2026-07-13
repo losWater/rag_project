@@ -1,4 +1,4 @@
-from src.retrieve import retrieve_multi
+from src.retrieve import reciprocal_rank_fusion, retrieve_bm25_multi, retrieve_multi
 
 
 class FakeEmbedding:
@@ -42,3 +42,54 @@ def test_retrieve_multi_deduplicates_and_tracks_matched_queries(monkeypatch):
     assert results[0].metadata["source_path"] == "a.pdf"
     assert results[0].matched_queries == ("cross entropy loss", "cross entropy")
 
+
+class FakeKeywordCollection:
+    def get(self, include):
+        return {
+            "documents": [
+                "Adam optimizer uses adaptive learning rates",
+                "Convolutional networks use learned filters",
+                "ReLU is a common activation function",
+            ],
+            "metadatas": [
+                {"source_path": "adam.pdf", "page": 1, "chunk_index": 0},
+                {"source_path": "cnn.pdf", "page": 2, "chunk_index": 0},
+                {"source_path": "relu.pdf", "page": 3, "chunk_index": 0},
+            ],
+        }
+
+
+def test_retrieve_bm25_multi_matches_exact_term(monkeypatch):
+    import src.retrieve as retrieve_module
+
+    monkeypatch.setattr(retrieve_module, "get_collection", lambda config: FakeKeywordCollection())
+
+    class Config:
+        top_k = 2
+
+    results = retrieve_bm25_multi(Config(), ["Adam optimizer"], top_k=2)
+
+    assert results[0].metadata["source_path"] == "adam.pdf"
+    assert results[0].retrieval_sources == ("bm25",)
+    assert results[0].fusion_score is not None
+
+
+def test_reciprocal_rank_fusion_combines_sources():
+    from src.retrieve import SearchResult
+
+    metadata = {"source_path": "shared.pdf", "page": 1, "chunk_index": 0}
+    vector = SearchResult("shared", metadata, 0.2, retrieval_sources=("vector",))
+    keyword = SearchResult("shared", metadata, None, retrieval_sources=("bm25",), fusion_score=3.0)
+    keyword_only = SearchResult(
+        "keyword only",
+        {"source_path": "keyword.pdf", "page": 2, "chunk_index": 0},
+        None,
+        retrieval_sources=("bm25",),
+        fusion_score=2.0,
+    )
+
+    results = reciprocal_rank_fusion([[vector], [keyword, keyword_only]], top_k=2, rrf_k=60)
+
+    assert results[0].metadata["source_path"] == "shared.pdf"
+    assert results[0].retrieval_sources == ("vector", "bm25")
+    assert results[0].fusion_score == 2 / 61

@@ -20,6 +20,8 @@ See [CHANGELOG.md](CHANGELOG.md) for iteration history and verification notes.
 - Low-cost model setup: Ollama `nomic-embed-text` for embeddings, DeepSeek API for answer generation.
 - Provider abstraction for API/local chat and embedding models.
 - Multi-query retrieval: one user question can produce several English retrieval phrases, searched and merged before generation.
+- Hybrid retrieval with Chroma vector search, BM25 keyword search, and Reciprocal Rank Fusion (RRF).
+- Configurable `vector`, `bm25`, and `hybrid` modes for retrieval ablation tests.
 - Bilingual retrieval: Chinese questions are rewritten into English retrieval queries because the slides are in English.
 - Citation-first answers with source file, page, and chunk metadata.
 - Query logs with retrieval queries, matched chunks, distances, and answer traces.
@@ -35,8 +37,9 @@ COMP9444 PDFs
 → fixed-size chunking
 → Ollama embeddings
 → Chroma vector store
-→ query rewrite / multi-query retrieval
-→ context merge + dedup
+→ query rewrite / multi-query planning
+→ Chroma vector search + BM25 keyword search
+→ RRF fusion + dedup
 → DeepSeek grounded answer
 → citations + query log
 ```
@@ -81,7 +84,7 @@ Verified locally:
 Indexed files: 9
 Chunks added: 216
 Collection count: 216
-Unit tests: 13 passed
+Unit tests: 16 passed
 Retrieval evaluation: source_recall@6 = 1.00, page_recall@6 = 1.00
 ```
 
@@ -183,6 +186,16 @@ Run retrieval regression checks:
 ```bash
 python -m src.app eval-retrieval --top-k 6
 ```
+
+Compare retrieval modes on the same evaluation set:
+
+```bash
+python -m src.app eval-retrieval --top-k 6 --retrieval-mode vector
+python -m src.app eval-retrieval --top-k 6 --retrieval-mode bm25
+python -m src.app eval-retrieval --top-k 6 --retrieval-mode hybrid
+```
+
+The current five-case smoke evaluation scores `1.00` source/page recall@6 in all three modes. This verifies that hybrid retrieval does not regress the existing cases, but the set is too small to claim an improvement; a larger fixed evaluation set is the next validation step.
 
 The second index run should skip unchanged PDFs:
 

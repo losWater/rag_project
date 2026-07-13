@@ -4,7 +4,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from .config import load_config
+from .config import load_config, with_retrieval_mode
 from .evaluate import evaluate_retrieval_case, load_retrieval_cases, summarize_results
 from .index import index_documents, index_summary
 from .pipeline import ask_question_with_config
@@ -34,10 +34,11 @@ def ask(
     question: str = typer.Argument(..., help="Question to ask over the COMP9444 knowledge base."),
     config_path: str = typer.Option("configs/rag.yaml", "--config", "-c"),
     top_k: int | None = typer.Option(None, "--top-k", help="Override top-k retrieval count."),
+    retrieval_mode: str | None = typer.Option(None, "--retrieval-mode", help="Override vector, bm25, or hybrid."),
     log: bool = typer.Option(True, "--log/--no-log", help="Write query, answer, and retrieved context metadata to JSONL."),
 ) -> None:
     """基于已索引课件进行一次 RAG 问答。"""
-    config = load_config(config_path)
+    config = with_retrieval_mode(load_config(config_path), retrieval_mode)
     effective_top_k = top_k or config.top_k
     response = ask_question_with_config(config, question, top_k=effective_top_k, log=log)
     contexts = response.contexts
@@ -51,9 +52,12 @@ def ask(
     table = Table(title="Retrieved citations")
     table.add_column("#")
     table.add_column("Citation")
-    table.add_column("Distance")
+    table.add_column("Retrieved by")
+    table.add_column("Score")
     for i, item in enumerate(contexts, start=1):
-        table.add_row(str(i), item.citation, f"{item.distance:.4f}")
+        score = item.fusion_score if item.fusion_score is not None else item.distance
+        score_text = f"{score:.4f}" if score is not None else "n/a"
+        table.add_row(str(i), item.citation, "+".join(item.retrieval_sources), score_text)
     console.print(table)
     if response.log_path:
         console.print(f"[dim]Query log written to {response.log_path}[/dim]")
@@ -77,9 +81,10 @@ def eval_retrieval(
     cases_path: str = typer.Option("data/eval/retrieval_cases.yaml", "--cases"),
     config_path: str = typer.Option("configs/rag.yaml", "--config", "-c"),
     top_k: int = typer.Option(6, "--top-k"),
+    retrieval_mode: str | None = typer.Option(None, "--retrieval-mode", help="Override vector, bm25, or hybrid."),
 ) -> None:
     """运行轻量检索回归测试，不调用最终回答生成。"""
-    config = load_config(config_path)
+    config = with_retrieval_mode(load_config(config_path), retrieval_mode)
     embedding_client = create_embedding_client(config.embedding)
     chat_client = create_chat_client(config.chat)
     cases = load_retrieval_cases(cases_path)
@@ -89,7 +94,7 @@ def eval_retrieval(
         for case in cases
     ]
 
-    table = Table(title=f"Retrieval evaluation @ {top_k}")
+    table = Table(title=f"Retrieval evaluation @ {top_k} ({config.retrieval_mode})")
     table.add_column("Case")
     table.add_column("Source hit")
     table.add_column("Page hit")

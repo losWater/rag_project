@@ -2,6 +2,31 @@
 
 This file records project iterations so regressions can be traced back to the likely change that introduced them.
 
+## 2026-07-13
+
+### Added
+
+- Added BM25 keyword retrieval using `rank-bm25`.
+- Added hybrid retrieval with Reciprocal Rank Fusion (RRF).
+- Added configurable `vector`, `bm25`, and `hybrid` retrieval modes.
+- Added `--retrieval-mode` overrides to the `ask` and `eval-retrieval` commands.
+- Added retrieval source and fusion score fields to CLI, Streamlit, and query logs.
+- Added BM25 exact-term, RRF fusion, and retrieval-mode validation tests.
+
+### Verified
+
+- Unit tests:
+  ```text
+  16 passed
+  ```
+- Existing five-case retrieval smoke evaluation at `top_k=6`:
+  ```text
+  vector: source_recall=1.00, page_recall=1.00
+  bm25:   source_recall=1.00, page_recall=1.00
+  hybrid: source_recall=1.00, page_recall=1.00
+  ```
+- These results verify no regression on the existing cases; they do not establish a hybrid-search improvement because the evaluation set is still small.
+
 ## 2026-06-22
 
 ### Added

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
+
+from rank_bm25 import BM25Okapi
 
 from .config import AppConfig
 from .index import get_collection
@@ -13,8 +16,10 @@ class SearchResult:
 
     text: str
     metadata: dict
-    distance: float
+    distance: float | None
     matched_queries: tuple[str, ...] = ()
+    retrieval_sources: tuple[str, ...] = ("vector",)
+    fusion_score: float | None = None
 
     @property
     def citation(self) -> str:
@@ -88,8 +93,145 @@ def retrieve_multi(
                 metadata=result.metadata,
                 distance=result.distance,
                 matched_queries=query_hits,
+                retrieval_sources=("vector",),
             )
         )
 
     ranked.sort(key=lambda item: (item.distance / max(1, len(item.matched_queries)), item.distance))
     return ranked[:final_top_k]
+
+
+def tokenize_for_bm25(text: str) -> list[str]:
+    """Tokenize English course text while retaining technical identifiers."""
+    return re.findall(r"[a-z0-9]+(?:[._+-][a-z0-9]+)*", text.lower())
+
+
+def retrieve_bm25_multi(
+    config: AppConfig,
+    queries: list[str],
+    top_k: int | None = None,
+) -> list[SearchResult]:
+    """Build a lightweight BM25 index over Chroma documents and search all queries."""
+    collection = get_collection(config)
+    stored = collection.get(include=["documents", "metadatas"])
+    documents = stored.get("documents") or []
+    metadatas = stored.get("metadatas") or []
+    if not documents:
+        return []
+
+    corpus_tokens = [tokenize_for_bm25(document) for document in documents]
+    bm25 = BM25Okapi(corpus_tokens)
+    merged: dict[tuple, tuple[SearchResult, float]] = {}
+    matched: dict[tuple, list[str]] = {}
+
+    for query in queries:
+        query_tokens = tokenize_for_bm25(query)
+        if not query_tokens:
+            continue
+        scores = bm25.get_scores(query_tokens)
+        ranked_indices = sorted(range(len(scores)), key=lambda index: float(scores[index]), reverse=True)
+        for index in ranked_indices[: top_k or config.top_k]:
+            score = float(scores[index])
+            if score <= 0:
+                continue
+            result = SearchResult(
+                text=documents[index],
+                metadata=metadatas[index] or {},
+                distance=None,
+                retrieval_sources=("bm25",),
+            )
+            key = chunk_key(result)
+            matched.setdefault(key, []).append(query)
+            previous = merged.get(key)
+            if previous is None or score > previous[1]:
+                merged[key] = (result, score)
+
+    ranked: list[SearchResult] = []
+    for key, (result, score) in merged.items():
+        ranked.append(
+            SearchResult(
+                text=result.text,
+                metadata=result.metadata,
+                distance=result.distance,
+                matched_queries=tuple(dict.fromkeys(matched[key])),
+                retrieval_sources=result.retrieval_sources,
+                fusion_score=score,
+            )
+        )
+    ranked.sort(key=lambda item: item.fusion_score or 0.0, reverse=True)
+    return ranked[: top_k or config.top_k]
+
+
+def reciprocal_rank_fusion(
+    result_lists: list[list[SearchResult]],
+    top_k: int,
+    rrf_k: int = 60,
+) -> list[SearchResult]:
+    """Fuse independently ranked result lists without comparing incompatible scores."""
+    fused_scores: dict[tuple, float] = {}
+    representative: dict[tuple, SearchResult] = {}
+    sources: dict[tuple, list[str]] = {}
+    queries: dict[tuple, list[str]] = {}
+
+    for results in result_lists:
+        for rank, result in enumerate(results, start=1):
+            key = chunk_key(result)
+            fused_scores[key] = fused_scores.get(key, 0.0) + 1.0 / (rrf_k + rank)
+            representative.setdefault(key, result)
+            sources.setdefault(key, []).extend(result.retrieval_sources)
+            queries.setdefault(key, []).extend(result.matched_queries)
+
+    ranked_keys = sorted(fused_scores, key=fused_scores.get, reverse=True)
+    fused: list[SearchResult] = []
+    for key in ranked_keys[:top_k]:
+        result = representative[key]
+        fused.append(
+            SearchResult(
+                text=result.text,
+                metadata=result.metadata,
+                distance=result.distance,
+                matched_queries=tuple(dict.fromkeys(queries[key])),
+                retrieval_sources=tuple(dict.fromkeys(sources[key])),
+                fusion_score=fused_scores[key],
+            )
+        )
+    return fused
+
+
+def search(
+    config: AppConfig,
+    embedding_client: EmbeddingClient,
+    queries: list[str],
+    top_k: int | None = None,
+) -> list[SearchResult]:
+    """Run the configured vector, BM25, or hybrid retrieval strategy."""
+    final_top_k = top_k or config.top_k
+    mode = getattr(config, "retrieval_mode", "vector")
+    if mode == "vector":
+        return retrieve_multi(
+            config,
+            embedding_client,
+            queries,
+            top_k=final_top_k,
+            per_query_k=getattr(config, "vector_candidates", final_top_k),
+        )
+    if mode == "bm25":
+        return retrieve_bm25_multi(config, queries, top_k=final_top_k)
+
+    vector_results = retrieve_multi(
+        config,
+        embedding_client,
+        queries,
+        top_k=getattr(config, "vector_candidates", final_top_k),
+        per_query_k=getattr(config, "vector_candidates", final_top_k),
+    )
+    keyword_results = retrieve_bm25_multi(
+        config,
+        queries,
+        top_k=getattr(config, "keyword_candidates", final_top_k),
+    )
+    return reciprocal_rank_fusion(
+        [vector_results, keyword_results],
+        top_k=final_top_k,
+        rrf_k=getattr(config, "rrf_k", 60),
+    )

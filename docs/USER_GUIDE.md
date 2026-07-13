@@ -94,9 +94,18 @@ python -m src.app ask "请问什么是交叉熵，用英文回答" --top-k 6
 系统会：
 
 1. 判断是否需要把问题改写成英文检索词。
-2. 在向量库中检索相关课件片段。
-3. 把检索结果交给大模型生成回答。
-4. 返回回答和引用来源。
+2. 使用 Chroma 向量检索和 BM25 关键词检索召回相关片段。
+3. 使用 RRF 融合两路排名并去重。
+4. 把检索结果交给大模型生成回答。
+5. 返回回答、引用来源和检索来源。
+
+默认使用 `hybrid` 模式。也可以临时覆盖模式进行对比：
+
+```bash
+python -m src.app ask "What is ReLU?" --retrieval-mode vector
+python -m src.app ask "What is ReLU?" --retrieval-mode bm25
+python -m src.app ask "What is ReLU?" --retrieval-mode hybrid
+```
 
 ## 6. 使用网页 Demo
 
@@ -130,6 +139,7 @@ logs/queries/YYYY-MM-DD.jsonl
 - 检索词；
 - 检索到的片段；
 - 距离分数；
+- 检索来源和 RRF 融合分数；
 - 回答内容；
 - 使用的模型配置名。
 
@@ -143,6 +153,14 @@ logs/queries/YYYY-MM-DD.jsonl
 2. 确认 `manifest.yaml` 中有对应记录。
 3. 重新运行 `python -m src.app index`。
 4. 在页面中刷新，或重新提问。
+
+运行检索消融评估：
+
+```bash
+python -m src.app eval-retrieval --top-k 6 --retrieval-mode vector
+python -m src.app eval-retrieval --top-k 6 --retrieval-mode bm25
+python -m src.app eval-retrieval --top-k 6 --retrieval-mode hybrid
+```
 
 如果模型连接失败：
 

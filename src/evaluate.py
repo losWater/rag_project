@@ -6,7 +6,7 @@ from pathlib import Path
 from .config import load_yaml, resolve_path
 from .providers import ChatClient, EmbeddingClient
 from .query_rewrite import rewrite_for_retrieval
-from .retrieve import SearchResult, retrieve_multi
+from .retrieve import SearchResult, search
 
 
 @dataclass(frozen=True)
@@ -59,7 +59,7 @@ def evaluate_retrieval_case(
 ) -> RetrievalEvalResult:
     """执行单条检索评估，检查 top-k 是否命中预期文件和页码。"""
     planned = rewrite_for_retrieval(chat_client, case.question)
-    results = retrieve_multi(config, embedding_client, planned.retrieval_queries, top_k=top_k)
+    results = search(config, embedding_client, planned.retrieval_queries, top_k=top_k)
 
     source_hit = any(result.metadata.get("source_name") in case.expected_sources for result in results)
     page_hit = any(

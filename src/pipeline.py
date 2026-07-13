@@ -8,7 +8,7 @@ from .generate import Answer, answer_query
 from .logging_utils import write_query_log
 from .providers import create_chat_client, create_embedding_client
 from .query_rewrite import QueryForRetrieval, rewrite_for_retrieval
-from .retrieve import SearchResult, retrieve_multi
+from .retrieve import SearchResult, search
 
 
 @dataclass(frozen=True)
@@ -49,7 +49,7 @@ def ask_question_with_config(
     effective_top_k = top_k or config.top_k
 
     planned_query = rewrite_for_retrieval(chat_client, question)
-    contexts = retrieve_multi(config, embedding_client, planned_query.retrieval_queries, top_k=effective_top_k)
+    contexts = search(config, embedding_client, planned_query.retrieval_queries, top_k=effective_top_k)
     answer = answer_query(chat_client, question, contexts)
 
     log_path = (

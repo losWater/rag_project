@@ -46,6 +46,8 @@ def write_query_log(
                 "page": item.metadata.get("page"),
                 "chunk_index": item.metadata.get("chunk_index"),
                 "distance": item.distance,
+                "retrieval_sources": list(item.retrieval_sources),
+                "fusion_score": item.fusion_score,
                 "matched_queries": list(item.matched_queries),
                 "text_preview": item.text[:300],
             }
