@@ -37,6 +37,7 @@ def write_query_log(
         "answer": answer.answer,
         "answer_mode": answer.answer_mode,
         "top_k": top_k,
+        "retrieval_mode": config.retrieval_mode,
         "citations": answer.citations,
         "retrieved": [
             {
@@ -48,6 +49,7 @@ def write_query_log(
                 "distance": item.distance,
                 "retrieval_sources": list(item.retrieval_sources),
                 "fusion_score": item.fusion_score,
+                "rerank_score": item.rerank_score,
                 "matched_queries": list(item.matched_queries),
                 "text_preview": item.text[:300],
             }

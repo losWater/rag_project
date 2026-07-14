@@ -1,4 +1,4 @@
-from src.retrieve import reciprocal_rank_fusion, retrieve_bm25_multi, retrieve_multi
+from src.retrieve import reciprocal_rank_fusion, retrieve_bm25_multi, retrieve_multi, tokenize_for_bm25
 
 
 class FakeEmbedding:
@@ -93,3 +93,13 @@ def test_reciprocal_rank_fusion_combines_sources():
     assert results[0].metadata["source_path"] == "shared.pdf"
     assert results[0].retrieval_sources == ("vector", "bm25")
     assert results[0].fusion_score == 2 / 61
+
+
+def test_bm25_tokenizer_normalizes_simple_english_plurals():
+    assert tokenize_for_bm25("assessment components and weights") == [
+        "assessment",
+        "component",
+        "and",
+        "weight",
+    ]
+    assert tokenize_for_bm25("cross entropy loss") == ["cross", "entropy", "loss"]

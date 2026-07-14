@@ -87,7 +87,7 @@ def clean_rewritten_query(text: str) -> str:
     ]
     for phrase in banned_phrases:
         cleaned = cleaned.replace(phrase, " ")
-    cleaned = re.sub(r"\s+", " ", cleaned).strip(" .,:;-")
+    cleaned = re.sub(r"\s+", " ", cleaned).strip(" .,:;-?!")
     return cleaned
 
 
@@ -111,7 +111,13 @@ def rewrite_for_retrieval(chat_client: ChatClient, query: str, max_queries: int 
     3 到 5 个英文检索词。最终回答仍然使用原始用户问题，避免丢失语言要求和意图。
     """
     if is_mostly_english(query):
-        return QueryForRetrieval(original_query=query, retrieval_query=query, retrieval_queries=[query], rewritten=False)
+        cleaned = clean_rewritten_query(query) or query
+        return QueryForRetrieval(
+            original_query=query,
+            retrieval_query=cleaned,
+            retrieval_queries=[cleaned],
+            rewritten=cleaned != query,
+        )
 
     planned_queries = glossary_queries(query)
 

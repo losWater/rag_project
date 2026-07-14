@@ -59,6 +59,7 @@ src/index.py
 ```text
 src/query_rewrite.py
 src/retrieve.py
+src/rerank.py
 ```
 
 重点理解：
@@ -67,7 +68,9 @@ src/retrieve.py
 - glossary 兜底逻辑怎么工作；
 - LLM query planner 在什么情况下被调用；
 - 多个 retrieval query 如何分别检索；
-- 检索结果如何合并、去重、重新排序。
+- Chroma 向量检索和 BM25 关键词检索如何互补；
+- RRF 如何融合不同分数尺度的两路排名；
+- cross-encoder 如何对候选 chunk 精排，以及失败时如何回退。
 
 读完这一步，你应该能解释：
 
@@ -172,6 +175,7 @@ src/chunk.py
 src/index.py
 src/query_rewrite.py
 src/retrieve.py
+src/rerank.py
 src/generate.py
 src/providers.py
 src/pipeline.py
@@ -191,7 +195,7 @@ tests/
 3. 解释 PDF 如何进入向量库。
 4. 解释中文问题如何匹配英文课件。
 5. 解释 multi-query retrieval 为什么比单查询稳定。
-6. 解释回答为什么带引用。
-7. 解释如何支持新课件增量添加。
-8. 最后说测试、日志和后续改进。
-
+6. 解释 BM25、向量检索、RRF 和 cross-encoder 的分工。
+7. 解释回答为什么带引用。
+8. 解释如何支持新课件增量添加。
+9. 最后用消融指标说明质量和延迟的取舍。

@@ -99,12 +99,13 @@ python -m src.app ask "请问什么是交叉熵，用英文回答" --top-k 6
 4. 把检索结果交给大模型生成回答。
 5. 返回回答、引用来源和检索来源。
 
-默认使用 `hybrid` 模式。也可以临时覆盖模式进行对比：
+默认使用质量优先的 `rerank` 模式：Hybrid 先召回候选，再由 cross-encoder 精排。首次运行需要下载 reranker 模型；如果模型不可用，系统会回退到 RRF 排名。也可以临时覆盖模式进行对比：
 
 ```bash
 python -m src.app ask "What is ReLU?" --retrieval-mode vector
 python -m src.app ask "What is ReLU?" --retrieval-mode bm25
 python -m src.app ask "What is ReLU?" --retrieval-mode hybrid
+python -m src.app ask "What is ReLU?" --retrieval-mode rerank
 ```
 
 ## 6. 使用网页 Demo
@@ -160,7 +161,17 @@ logs/queries/YYYY-MM-DD.jsonl
 python -m src.app eval-retrieval --top-k 6 --retrieval-mode vector
 python -m src.app eval-retrieval --top-k 6 --retrieval-mode bm25
 python -m src.app eval-retrieval --top-k 6 --retrieval-mode hybrid
+python -m src.app eval-retrieval --top-k 6 --retrieval-mode rerank
 ```
+
+保存可复现的 JSON 报告：
+
+```bash
+python -m src.app eval-retrieval --top-k 6 --retrieval-mode rerank \
+  --output-json data/eval/results/rerank_42_cases.json
+```
+
+报告包含汇总指标、每条用例的检索词、命中状态、排序指标、延迟和引用。`data/eval/results/` 受 `.gitignore` 保护。
 
 如果模型连接失败：
 

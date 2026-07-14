@@ -1,6 +1,10 @@
 cases:
   - id: cross_entropy_zh
     question: "请问什么是交叉熵，用英文回答"
+    retrieval_queries:
+      - "cross entropy loss"
+      - "cross entropy derivation"
+      - "cross entropy KL divergence"
     expected_sources:
       - "3a_Variations.pdf"
     expected_pages: [3, 7, 8, 9, 10]
@@ -29,3 +33,242 @@ cases:
       - "2b_Generalization.pdf"
     expected_pages: [1, 2]
 
+  - id: adam_optimizer_exact
+    question: "Which PyTorch optimizer is described as Adaptive Moment Estimation?"
+    expected_sources:
+      - "2c_PyTorch.pdf"
+    expected_pages: [11]
+
+  - id: torch_no_grad_exact
+    question: "Why do we use torch.no_grad() and net.eval() during testing?"
+    expected_sources:
+      - "2c_PyTorch.pdf"
+    expected_pages: [14]
+
+  - id: computational_graph_detach
+    question: "How can gradients be stopped through a variable in PyTorch?"
+    expected_sources:
+      - "2c_PyTorch.pdf"
+    expected_pages: [15, 16]
+
+  - id: dropout_zh
+    question: "Dropout在训练和部署阶段分别如何工作？"
+    retrieval_queries:
+      - "dropout training inference deployment"
+      - "dropout keep probability implicit ensemble"
+    expected_sources:
+      - "2b_Generalization.pdf"
+    expected_pages: [18, 19, 21]
+
+  - id: early_stopping_en
+    question: "How does early stopping use validation error to avoid overfitting?"
+    expected_sources:
+      - "2b_Generalization.pdf"
+    expected_pages: [14, 16, 17]
+
+  - id: bayes_medical_test
+    question: "How is Bayes' rule applied to the cancer screening example?"
+    expected_sources:
+      - "2a_Probability.pdf"
+    expected_pages: [11, 12, 13]
+
+  - id: huffman_entropy
+    question: "How is entropy related to the average bits per symbol in Huffman coding?"
+    expected_sources:
+      - "2a_Probability.pdf"
+    expected_pages: [17, 18, 19]
+
+  - id: softmax_backprop
+    question: "What is the softmax function and its gradient for the correct class?"
+    expected_sources:
+      - "3a_Variations.pdf"
+    expected_pages: [11, 12, 13]
+
+  - id: weight_decay_map
+    question: "Why can weight decay be interpreted as MAP estimation with a Gaussian prior?"
+    expected_sources:
+      - "3a_Variations.pdf"
+    expected_pages: [14, 15, 16]
+
+  - id: vanishing_gradient_zh
+    question: "深层网络为什么会出现梯度消失或梯度爆炸？有哪些缓解方法？"
+    retrieval_queries:
+      - "vanishing exploding gradients deep networks"
+      - "avoid vanishing gradients activation initialization batch normalization skip connections"
+    expected_sources:
+      - "3b_Dynamics.pdf"
+    expected_pages: [16, 17, 18, 19]
+
+  - id: relu_exact
+    question: "Why are ReLU activations preferred over sigmoid in deep networks?"
+    expected_sources:
+      - "3b_Dynamics.pdf"
+    expected_pages: [18, 19]
+
+  - id: convolution_zero_padding
+    question: "How does zero padding preserve the spatial size of a convolution layer?"
+    expected_sources:
+      - "4a_Convolution.pdf"
+    expected_pages: [17, 18, 19]
+
+  - id: convolution_stride_formula
+    question: "What is the convolution output-size formula when stride and padding are used?"
+    expected_sources:
+      - "4a_Convolution.pdf"
+    expected_pages: [21, 22, 23, 24]
+
+  - id: lenet_dimensions
+    question: "How do convolution and subsampling change the dimensions in LeNet?"
+    expected_sources:
+      - "4a_Convolution.pdf"
+    expected_pages: [13, 14, 16]
+
+  - id: neuron_dendrite_axon
+    question: "What roles do dendrites, axons, and synapses play in a biological neuron?"
+    expected_sources:
+      - "1b_Neuroanatomy.pdf"
+      - "1c_Perceptrons.pdf"
+    expected_pages: [3, 4, 21, 22, 23, 25, 26, 27]
+    relevant_pages:
+      "1b_Neuroanatomy.pdf": [21, 22, 23, 25, 26, 27]
+      "1c_Perceptrons.pdf": [3, 4]
+
+  - id: course_assessment_weights
+    question: "What are the assessment components and their percentage weights in COMP9444?"
+    expected_sources:
+      - "1a_Overview.pdf"
+    expected_pages: [18, 19, 20, 21]
+
+  - id: plagiarism_policy
+    question: "What does the course say about plagiarism and academic misconduct?"
+    expected_sources:
+      - "1a_Overview.pdf"
+    expected_pages: [28]
+
+  - id: gaussian_distribution
+    question: "What are the parameters and formula of a multivariate Gaussian distribution?"
+    expected_sources:
+      - "2a_Probability.pdf"
+    expected_pages: [7, 8]
+
+  - id: forward_reverse_kl
+    question: "How do forward KL and reverse KL behave differently when approximating a distribution?"
+    expected_sources:
+      - "2a_Probability.pdf"
+    expected_pages: [24, 25]
+
+  - id: supervised_learning
+    question: "What distinguishes supervised learning from reinforcement learning?"
+    expected_sources:
+      - "2b_Generalization.pdf"
+    expected_pages: [3, 4, 5]
+
+  - id: ockhams_razor
+    question: "What does Ockham's Razor mean for selecting a learning hypothesis?"
+    expected_sources:
+      - "2b_Generalization.pdf"
+    expected_pages: [11]
+
+  - id: perceptron_learning_rule
+    question: "How does the perceptron learning rule update weights after a classification error?"
+    expected_sources:
+      - "1c_Perceptrons.pdf"
+    expected_pages: [12, 13, 14, 15, 16, 17]
+
+  - id: autoencoder_bottleneck
+    question: "Why does an autoencoder use a bottleneck to reproduce its input?"
+    expected_sources:
+      - "1b_Neuroanatomy.pdf"
+      - "3b_Dynamics.pdf"
+    expected_pages: [3, 35]
+    relevant_pages:
+      "1b_Neuroanatomy.pdf": [35]
+      "3b_Dynamics.pdf": [3]
+
+  - id: recurrent_network_unrolling
+    question: "How can a recurrent neural network be unrolled for temporal or language processing?"
+    expected_sources:
+      - "1b_Neuroanatomy.pdf"
+    expected_pages: [38]
+
+  - id: max_pooling_dimensions
+    question: "How does max pooling reduce spatial dimensions, including overlapping pooling?"
+    expected_sources:
+      - "4a_Convolution.pdf"
+    expected_pages: [15, 16, 27]
+
+  - id: image_data_augmentation
+    question: "How does image data augmentation reduce overfitting in AlexNet-style training?"
+    expected_sources:
+      - "4b_Image.pdf"
+    expected_pages: [11, 12, 13]
+
+  - id: batch_normalization
+    question: "How does batch normalization use mini-batch mean and variance to normalize activations?"
+    expected_sources:
+      - "4b_Image.pdf"
+    expected_pages: [22]
+
+  - id: residual_skip_connections
+    question: "Why do residual networks add identity skip connections when going deeper?"
+    expected_sources:
+      - "4b_Image.pdf"
+    expected_pages: [15, 23, 24, 25]
+
+  - id: neural_style_transfer
+    question: "How are content loss and style loss combined in neural style transfer?"
+    expected_sources:
+      - "4b_Image.pdf"
+    expected_pages: [28, 29, 30, 31, 32]
+
+  - id: rl_exploration_exploitation
+    question: "What is the exploration versus exploitation tradeoff in a K-armed bandit?"
+    expected_sources:
+      - "5a_Reinforcement.pdf"
+    expected_pages: [12, 13, 14]
+
+  - id: q_learning_update
+    question: "How does Q-learning update a state-action value and converge toward an optimal policy?"
+    expected_sources:
+      - "5a_Reinforcement.pdf"
+    expected_pages: [17, 18, 19, 20]
+
+  - id: actor_critic
+    question: "How does an actor-critic algorithm combine policy learning with value estimation?"
+    expected_sources:
+      - "5a_Reinforcement.pdf"
+      - "5b_DeepRL.pdf"
+    expected_pages: [20, 21, 22, 23, 37, 38]
+    relevant_pages:
+      "5a_Reinforcement.pdf": [37, 38]
+      "5b_DeepRL.pdf": [20, 21, 22, 23]
+
+  - id: dqn_experience_replay
+    question: "Why does Deep Q-Learning use experience replay and a separate target network?"
+    expected_sources:
+      - "5b_DeepRL.pdf"
+    expected_pages: [11, 12, 13, 14, 16, 17, 18]
+
+  - id: a3c_advantage
+    question: "What are the advantage function and asynchronous advantage actor-critic method?"
+    expected_sources:
+      - "5b_DeepRL.pdf"
+    expected_pages: [19, 20, 21, 22, 23]
+
+  - id: bptt_unrolling
+    question: "How does backpropagation through time train an unrolled recurrent network?"
+    expected_sources:
+      - "7a_Recurrent.pdf"
+    expected_pages: [8, 9, 10]
+
+  - id: lstm_gru_gates
+    question: "How do the gates in LSTM and GRU address long-range dependencies?"
+    expected_sources:
+      - "7a_Recurrent.pdf"
+    expected_pages: [27, 28, 31, 32, 33, 34]
+
+  - id: recurrent_attention_translation
+    question: "How are a bidirectional recurrent encoder and attention used for neural machine translation?"
+    expected_sources:
+      - "7a_Recurrent.pdf"
+    expected_pages: [35, 36, 37, 38]

@@ -15,10 +15,15 @@ chunking:
 retrieval:
   collection_name: comp9444_chunks
   top_k: 5
-  mode: hybrid
+  mode: rerank
   vector_candidates: 12
   keyword_candidates: 12
   rrf_k: 60
+  rerank_candidates: 20
+
+reranker:
+  model: cross-encoder/ms-marco-MiniLM-L6-v2
+  fallback_on_error: true
 
 chat:
   provider: deepseek_api

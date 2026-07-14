@@ -21,7 +21,8 @@ See [CHANGELOG.md](CHANGELOG.md) for iteration history and verification notes.
 - Provider abstraction for API/local chat and embedding models.
 - Multi-query retrieval: one user question can produce several English retrieval phrases, searched and merged before generation.
 - Hybrid retrieval with Chroma vector search, BM25 keyword search, and Reciprocal Rank Fusion (RRF).
-- Configurable `vector`, `bm25`, and `hybrid` modes for retrieval ablation tests.
+- Cross-encoder reranking over hybrid candidates using `ms-marco-MiniLM-L6-v2`.
+- Configurable `vector`, `bm25`, `hybrid`, and `rerank` modes for retrieval ablation tests.
 - Bilingual retrieval: Chinese questions are rewritten into English retrieval queries because the slides are in English.
 - Citation-first answers with source file, page, and chunk metadata.
 - Query logs with retrieval queries, matched chunks, distances, and answer traces.
@@ -40,6 +41,7 @@ COMP9444 PDFs
 → query rewrite / multi-query planning
 → Chroma vector search + BM25 keyword search
 → RRF fusion + dedup
+→ cross-encoder reranking
 → DeepSeek grounded answer
 → citations + query log
 ```
@@ -76,16 +78,20 @@ Local COMP9444 test set:
 3a_Variations.pdf
 3b_Dynamics.pdf
 4a_Convolution.pdf
+4b_Image.pdf
+5a_Reinforcement.pdf
+5b_DeepRL.pdf
+7a_Recurrent.pdf
 ```
 
 Verified locally:
 
 ```text
-Indexed files: 9
-Chunks added: 216
-Collection count: 216
-Unit tests: 16 passed
-Retrieval evaluation: source_recall@6 = 1.00, page_recall@6 = 1.00
+Indexed files: 13
+Indexed chunks: 356
+Collection count: 356
+Unit tests: 24 passed
+Retrieval evaluation (42 fixed cases): source/page recall@6 = 1.00, MRR@6 = 0.964, nDCG@6 = 0.861
 ```
 
 Example query:
@@ -193,9 +199,26 @@ Compare retrieval modes on the same evaluation set:
 python -m src.app eval-retrieval --top-k 6 --retrieval-mode vector
 python -m src.app eval-retrieval --top-k 6 --retrieval-mode bm25
 python -m src.app eval-retrieval --top-k 6 --retrieval-mode hybrid
+python -m src.app eval-retrieval --top-k 6 --retrieval-mode rerank
 ```
 
-The current five-case smoke evaluation scores `1.00` source/page recall@6 in all three modes. This verifies that hybrid retrieval does not regress the existing cases, but the set is too small to claim an improvement; a larger fixed evaluation set is the next validation step.
+The fixed 42-case evaluation compares both recall and ranking quality across 13 course PDFs and 356 chunks:
+
+| Mode | Source recall@6 | Page recall@6 | MRR@6 | nDCG@6 | Avg retrieval latency |
+|---|---:|---:|---:|---:|---:|
+| Vector | 1.00 | 1.00 | 0.939 | 0.816 | 46 ms |
+| BM25 | 1.00 | 0.98 | 0.800 | 0.702 | 16 ms |
+| Hybrid + RRF | 1.00 | 1.00 | 0.923 | 0.799 | 59 ms |
+| Hybrid + reranker | 1.00 | 1.00 | 0.964 | 0.861 | 305 ms* |
+
+The reranker improves ranking quality on this set, while adding local model latency. Evaluation cases use fixed retrieval queries so comparisons do not vary with LLM query planning. Latency values are one local CPU run and are not general deployment benchmarks. `*` The rerank average includes a cold model load; its measured p95 after loading was 183 ms.
+
+Write a machine-readable evaluation report (ignored by git):
+
+```bash
+python -m src.app eval-retrieval --top-k 6 --retrieval-mode rerank \
+  --output-json data/eval/results/rerank_42_cases.json
+```
 
 The second index run should skip unchanged PDFs:
 
@@ -270,5 +293,5 @@ This project avoids that path by supplying embeddings explicitly through the con
 ## Example Resume Description
 
 ```text
-Built a RAG-based course assistant for COMP9444 materials using PyMuPDF, Chroma, Ollama embeddings, and DeepSeek API; implemented multi-query retrieval, bilingual query rewriting, citation logging, incremental indexing, and retrieval regression evaluation, achieving 100% source/page recall@6 on a 5-case validation set.
+Built a RAG-based course assistant for COMP9444 materials using PyMuPDF, Chroma, Ollama embeddings, and DeepSeek API; implemented bilingual multi-query retrieval, BM25/vector fusion with RRF, cross-encoder reranking, citations, incremental indexing, and retrieval evaluation, achieving 1.00 source/page recall@6, 0.964 MRR@6, and 0.861 nDCG@6 on a fixed 42-case evaluation set over 13 course PDFs.
 ```

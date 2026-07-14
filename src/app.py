@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import typer
 from rich.console import Console
 from rich.table import Table
@@ -34,7 +37,7 @@ def ask(
     question: str = typer.Argument(..., help="Question to ask over the COMP9444 knowledge base."),
     config_path: str = typer.Option("configs/rag.yaml", "--config", "-c"),
     top_k: int | None = typer.Option(None, "--top-k", help="Override top-k retrieval count."),
-    retrieval_mode: str | None = typer.Option(None, "--retrieval-mode", help="Override vector, bm25, or hybrid."),
+    retrieval_mode: str | None = typer.Option(None, "--retrieval-mode", help="Override vector, bm25, hybrid, or rerank."),
     log: bool = typer.Option(True, "--log/--no-log", help="Write query, answer, and retrieved context metadata to JSONL."),
 ) -> None:
     """基于已索引课件进行一次 RAG 问答。"""
@@ -55,7 +58,8 @@ def ask(
     table.add_column("Retrieved by")
     table.add_column("Score")
     for i, item in enumerate(contexts, start=1):
-        score = item.fusion_score if item.fusion_score is not None else item.distance
+        score = item.rerank_score if item.rerank_score is not None else item.fusion_score
+        score = score if score is not None else item.distance
         score_text = f"{score:.4f}" if score is not None else "n/a"
         table.add_row(str(i), item.citation, "+".join(item.retrieval_sources), score_text)
     console.print(table)
@@ -81,7 +85,8 @@ def eval_retrieval(
     cases_path: str = typer.Option("data/eval/retrieval_cases.yaml", "--cases"),
     config_path: str = typer.Option("configs/rag.yaml", "--config", "-c"),
     top_k: int = typer.Option(6, "--top-k"),
-    retrieval_mode: str | None = typer.Option(None, "--retrieval-mode", help="Override vector, bm25, or hybrid."),
+    retrieval_mode: str | None = typer.Option(None, "--retrieval-mode", help="Override vector, bm25, hybrid, or rerank."),
+    output_json: Path | None = typer.Option(None, "--output-json", help="Write reproducible metrics and per-case results."),
 ) -> None:
     """运行轻量检索回归测试，不调用最终回答生成。"""
     config = with_retrieval_mode(load_config(config_path), retrieval_mode)
@@ -98,6 +103,9 @@ def eval_retrieval(
     table.add_column("Case")
     table.add_column("Source hit")
     table.add_column("Page hit")
+    table.add_column("RR")
+    table.add_column("nDCG")
+    table.add_column("Latency")
     table.add_column("Top citations")
     for result in results:
         top_citations = "\n".join(item.citation for item in result.results[:3])
@@ -105,6 +113,9 @@ def eval_retrieval(
             result.case.id,
             "yes" if result.source_hit else "no",
             "yes" if result.page_hit else "no",
+            f"{result.reciprocal_rank:.3f}",
+            f"{result.ndcg:.3f}",
+            f"{result.latency_ms:.0f} ms",
             top_citations,
         )
     console.print(table)
@@ -114,7 +125,35 @@ def eval_retrieval(
         f"Cases: {int(summary['cases'])}; "
         f"source_recall@{top_k}: {summary['source_recall']:.2f}; "
         f"page_recall@{top_k}: {summary['page_recall']:.2f}"
+        f"; Hit@{top_k}: {summary['hit_rate']:.2f}"
+        f"; MRR@{top_k}: {summary['mrr']:.3f}"
+        f"; nDCG@{top_k}: {summary['ndcg']:.3f}"
+        f"; avg latency: {summary['avg_latency_ms']:.0f} ms"
+        f"; p95 latency: {summary['p95_latency_ms']:.0f} ms"
     )
+
+    if output_json:
+        report = {
+            "retrieval_mode": config.retrieval_mode,
+            "top_k": top_k,
+            "summary": summary,
+            "cases": [
+                {
+                    "id": result.case.id,
+                    "retrieval_queries": result.retrieval_queries,
+                    "source_hit": result.source_hit,
+                    "page_hit": result.page_hit,
+                    "reciprocal_rank": result.reciprocal_rank,
+                    "ndcg": result.ndcg,
+                    "latency_ms": result.latency_ms,
+                    "citations": [item.citation for item in result.results],
+                }
+                for result in results
+            ],
+        }
+        output_json.parent.mkdir(parents=True, exist_ok=True)
+        output_json.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        console.print(f"[dim]Evaluation report written to {output_json}[/dim]")
 
 
 if __name__ == "__main__":

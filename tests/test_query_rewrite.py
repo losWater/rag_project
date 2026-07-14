@@ -1,4 +1,4 @@
-from src.query_rewrite import glossary_queries, glossary_query, is_mostly_english, parse_query_lines
+from src.query_rewrite import glossary_queries, glossary_query, is_mostly_english, parse_query_lines, rewrite_for_retrieval
 
 
 def test_is_mostly_english_for_english_question():
@@ -31,3 +31,11 @@ def test_parse_query_lines():
         "cross entropy",
         "loss function",
     ]
+
+
+def test_english_query_removes_course_name_retrieval_noise():
+    result = rewrite_for_retrieval(None, "What are the assessment weights in COMP9444?")
+
+    assert result.original_query == "What are the assessment weights in COMP9444?"
+    assert result.retrieval_queries == ["What are the assessment weights in"]
+    assert result.rewritten

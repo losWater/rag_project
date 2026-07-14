@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass
 
@@ -8,6 +9,9 @@ from rank_bm25 import BM25Okapi
 from .config import AppConfig
 from .index import get_collection
 from .providers import EmbeddingClient
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -20,6 +24,7 @@ class SearchResult:
     matched_queries: tuple[str, ...] = ()
     retrieval_sources: tuple[str, ...] = ("vector",)
     fusion_score: float | None = None
+    rerank_score: float | None = None
 
     @property
     def citation(self) -> str:
@@ -103,7 +108,8 @@ def retrieve_multi(
 
 def tokenize_for_bm25(text: str) -> list[str]:
     """Tokenize English course text while retaining technical identifiers."""
-    return re.findall(r"[a-z0-9]+(?:[._+-][a-z0-9]+)*", text.lower())
+    tokens = re.findall(r"[a-z0-9]+(?:[._+-][a-z0-9]+)*", text.lower())
+    return [token[:-1] if len(token) > 4 and token.endswith("s") and not token.endswith("ss") else token for token in tokens]
 
 
 def retrieve_bm25_multi(
@@ -218,6 +224,7 @@ def search(
     if mode == "bm25":
         return retrieve_bm25_multi(config, queries, top_k=final_top_k)
 
+    candidate_count = getattr(config, "rerank_candidates", 20) if mode == "rerank" else final_top_k
     vector_results = retrieve_multi(
         config,
         embedding_client,
@@ -230,8 +237,25 @@ def search(
         queries,
         top_k=getattr(config, "keyword_candidates", final_top_k),
     )
-    return reciprocal_rank_fusion(
+    hybrid_results = reciprocal_rank_fusion(
         [vector_results, keyword_results],
-        top_k=final_top_k,
+        top_k=candidate_count,
         rrf_k=getattr(config, "rrf_k", 60),
     )
+    if mode == "hybrid":
+        return hybrid_results
+    return _rerank(config, queries[0], hybrid_results, final_top_k)
+
+
+def _rerank(config: AppConfig, query: str, candidates: list[SearchResult], top_k: int) -> list[SearchResult]:
+    """Apply the configured cross-encoder, with an explicit fallback to RRF order."""
+    from .rerank import get_cross_encoder, rerank_results
+
+    model_name = str(config.reranker.get("model", "cross-encoder/ms-marco-MiniLM-L6-v2"))
+    try:
+        return rerank_results(candidates, query, get_cross_encoder(model_name), top_k)
+    except Exception as exc:
+        if not config.reranker.get("fallback_on_error", True):
+            raise
+        logger.warning("Reranker failed; falling back to RRF order: %s", exc)
+        return candidates[:top_k]

@@ -2,6 +2,30 @@
 
 This file records project iterations so regressions can be traced back to the likely change that introduced them.
 
+## 2026-07-14
+
+### Added
+
+- Added four course PDFs to the local index through `manifest.yaml`: Image Processing, Reinforcement Learning, Deep Reinforcement Learning, and Recurrent Networks.
+- Expanded the fixed retrieval evaluation set from 20 to 42 cases.
+- Added explicit source/page relevance judgments for multi-source cases.
+- Added Hit@k, P95 retrieval latency, and ignored JSON evaluation reports.
+- Added a Streamlit retrieval-mode selector.
+
+### Changed
+
+- Added lightweight English plural normalization to BM25 tokenization.
+- Cleaned retrieval noise such as the course identifier from English queries while preserving the original question for generation.
+- Increased the local index from 9 PDFs / 216 chunks to 13 PDFs / 356 chunks.
+
+### Verified
+
+```text
+24 tests passed
+rerank @ 6, 42 cases:
+source_recall=1.00, page_recall=1.00, MRR=0.964, nDCG=0.861
+```
+
 ## 2026-07-13
 
 ### Added
@@ -26,6 +50,24 @@ This file records project iterations so regressions can be traced back to the li
   hybrid: source_recall=1.00, page_recall=1.00
   ```
 - These results verify no regression on the existing cases; they do not establish a hybrid-search improvement because the evaluation set is still small.
+
+### Retrieval Evaluation And Reranking
+
+- Expanded the fixed retrieval evaluation set from 5 to 20 cases.
+- Added MRR@k and binary nDCG@k ranking metrics.
+- Added fixed retrieval queries to non-English evaluation cases for reproducible ablations.
+- Added optional cross-encoder reranking with `cross-encoder/ms-marco-MiniLM-L6-v2`.
+- Added explicit fallback to RRF order when the reranker is unavailable.
+- Changed the default retrieval mode to `rerank` after the fixed evaluation showed a ranking improvement.
+
+```text
+vector: source/page recall=1.00, MRR=0.960, nDCG=0.870, avg=53ms
+bm25: source/page recall=1.00, MRR=0.863, nDCG=0.796, avg=16ms
+hybrid: source/page recall=1.00, MRR=0.938, nDCG=0.866, avg=55ms
+rerank: source/page recall=1.00, MRR=0.975, nDCG=0.900, avg=530ms
+```
+
+Latency numbers are from one local CPU run and are used only for relative comparison within this project.
 
 ## 2026-06-22
 

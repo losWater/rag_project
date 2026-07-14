@@ -52,3 +52,27 @@ documents:
     document_type: lecture
     tags: [convolutional_networks, cnn, conceptual_lecture]
     index: true
+
+  - path: data/raw/comp9444/4b_Image.pdf
+    title: Week 4b Image Processing
+    document_type: lecture
+    tags: [image_processing, cnn, conceptual_lecture]
+    index: true
+
+  - path: data/raw/comp9444/5a_Reinforcement.pdf
+    title: Week 5a Reinforcement Learning
+    document_type: lecture
+    tags: [reinforcement_learning, rl, conceptual_lecture]
+    index: true
+
+  - path: data/raw/comp9444/5b_DeepRL.pdf
+    title: Week 5b Deep Reinforcement Learning
+    document_type: lecture
+    tags: [deep_reinforcement_learning, deep_rl, conceptual_lecture]
+    index: true
+
+  - path: data/raw/comp9444/7a_Recurrent.pdf
+    title: Week 7a Recurrent Neural Networks
+    document_type: lecture
+    tags: [recurrent_neural_networks, rnn, sequence_models, conceptual_lecture]
+    index: true

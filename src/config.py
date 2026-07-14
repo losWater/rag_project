@@ -33,6 +33,8 @@ class AppConfig:
     vector_candidates: int
     keyword_candidates: int
     rrf_k: int
+    rerank_candidates: int
+    reranker: dict[str, Any]
     chat: dict[str, Any]
     embedding: dict[str, Any]
 
@@ -68,8 +70,8 @@ def load_config(config_path: str | Path = "configs/rag.yaml") -> AppConfig:
     retrieval = data.get("retrieval", {})
 
     retrieval_mode = str(retrieval.get("mode", "vector")).lower()
-    if retrieval_mode not in {"vector", "bm25", "hybrid"}:
-        raise ValueError("retrieval.mode must be one of: vector, bm25, hybrid")
+    if retrieval_mode not in {"vector", "bm25", "hybrid", "rerank"}:
+        raise ValueError("retrieval.mode must be one of: vector, bm25, hybrid, rerank")
 
     return AppConfig(
         raw_data_dir=resolve_path(paths.get("raw_data_dir", "data/raw/comp9444")),
@@ -85,6 +87,8 @@ def load_config(config_path: str | Path = "configs/rag.yaml") -> AppConfig:
         vector_candidates=int(retrieval.get("vector_candidates", 12)),
         keyword_candidates=int(retrieval.get("keyword_candidates", 12)),
         rrf_k=int(retrieval.get("rrf_k", 60)),
+        rerank_candidates=int(retrieval.get("rerank_candidates", 20)),
+        reranker=dict(data.get("reranker", {})),
         chat=dict(data.get("chat", {})),
         embedding=dict(data.get("embedding", {})),
     )
@@ -107,6 +111,6 @@ def with_retrieval_mode(config: AppConfig, mode: str | None) -> AppConfig:
     if mode is None:
         return config
     normalized = mode.lower()
-    if normalized not in {"vector", "bm25", "hybrid"}:
-        raise ValueError("retrieval mode must be one of: vector, bm25, hybrid")
+    if normalized not in {"vector", "bm25", "hybrid", "rerank"}:
+        raise ValueError("retrieval mode must be one of: vector, bm25, hybrid, rerank")
     return replace(config, retrieval_mode=normalized)
